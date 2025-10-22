@@ -22,6 +22,7 @@
         <nav>
             <u1>
                 {% if user.is_authenticated %}
+                    <li><a href="{% url 'album-index' %}">Albums</a></li>
                     <li><a href="{% url 'about' %}">About</a></li>
                     <li>
                         <form id="logout-form" method="post" action="{% url 'logout' %}">
@@ -30,6 +31,7 @@
                         </form>
                     </li>
                 {% else %}
+                    <li><a href="{% url 'album-index' %}">Albums</a></li>
                     <li><a href="{% url 'about' %}">About</a></li>
                     <li><a href="{% url 'home' %}">Login</a></li>
                     <li><a href="{% url 'signup' %}">Sign up</a></li>

@@ -30,3 +30,8 @@ def signup(request):
     form = UserCreationForm()
     context = {'form': form, 'error_message': error_message}
     return render(request, 'signup.html', context)
+
+def album_index(request):
+    # albums = Album.objects.filter(user=request.user)
+    # Render the armies/index.html template with the armies data
+    return render(request, 'albums/index.html') #, {'albums': albums})
