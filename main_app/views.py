@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from django.views.generic import ListView, DetailView
 from django.contrib.auth import login
@@ -9,6 +9,7 @@ from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.http import HttpResponse
 import requests, json
+from django.utils.text import slugify
 from .models import Album
 
 # Create your views here.
@@ -34,20 +35,30 @@ def signup(request):
     return render(request, 'signup.html', context)
 
 def album_index(request):
-    response = requests.get(f"https://api.discogs.com/database/search?q=%The&genre=rock&key=sKHvVGbPNWqXPtxNqkyc&secret=LkehLbliRgkzCOOUbwFGCCXADMqgdMif").json()
-    data = response["results"]
-    # albumsfromap = data["results"]
-    albums = []
-    for album in data:
-        album_data = Album(
-            title = album["title"],
-            year = album["year"],
-            genre = album["genre"],
-            style = album["style"],
-            cover_image = album["cover_image"],
-            master_id = album["master_id"],
-        )
-        album_data.save()
-        albums.append(album_data)
-    print(albums)
+    if not Album.objects.exists():
+        print("🚀 First visit - fetching from API!")
+        response = requests.get("https://api.discogs.com/database/search?q=The&genre=rock&key=sKHvVGbPNWqXPtxNqkyc&secret=LkehLbliRgkzCOOUbwFGCCXADMqgdMif").json()
+        
+        for album_data in response["results"]:
+            Album.objects.get_or_create(
+                master_id=album_data["master_id"],
+                defaults={
+                    'title': album_data["title"],
+                    'year': album_data.get("year", ""),
+                    'genre': album_data.get("genre", []),
+                    'style': album_data.get("style", []),
+                    'cover_image': album_data["cover_image"],
+                    'slug': slugify(album_data["title"]),
+                }
+            )
+        print("✅ All albums saved!")
+    
+    # ALWAYS show from DATABASE (fast!)
+    albums = list(Album.objects.all())
+    print(f"📊 Showing {len(albums)} albums from database")
+    
     return render(request, 'albums/index.html', {'albums': albums})
+
+def album_detail(request, album_slug):
+    album = get_object_or_404(Album, slug=album_slug)
+    return render(request, 'albums/detail.html', {'album': album})

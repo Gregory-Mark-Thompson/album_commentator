@@ -7,4 +7,5 @@ urlpatterns = [
     path('accounts/signup/', views.signup, name='signup'),
     path('albums/', views.album_index, name='album-index'),
     path('accounts/signup/', views.signup, name='signup'),
+    path('albums/<slug:album_slug>/', views.album_detail, name='album_detail'),
 ]

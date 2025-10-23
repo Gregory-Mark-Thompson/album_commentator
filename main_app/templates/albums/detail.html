@@ -1,0 +1,24 @@
+{% extends 'base.html' %} 
+{% load static %} 
+{% block head %}
+<link rel="stylesheet" href="{% static 'css/albums/album-detail.css' %}" />
+{% endblock %} 
+{% block content %}
+<section class="album-container">
+    <div class="album-details">
+        <h1>{{ album.title }}</h1>
+        {% if album.year %}
+            <h2>Year: {{ album.year }}</h2>
+        {% endif %}
+        {% if album.genre %}
+            <h2>Genre(s): {{ album.genre|join:", " }}</h2>
+        {% endif %}
+        {% if album.style %}
+            <h2>Style(s): {{ album.style|join:", " }}</h2>
+        {% endif %}
+    </div>
+    <div class="album-img">
+        <img src={{ album.cover_image }} alt="This is the image of the album.">
+    </div>
+</section>
+{% endblock %}
