@@ -8,6 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.http import HttpResponse
+import requests, json
+from .models import Album
 
 # Create your views here.
 
@@ -32,6 +34,20 @@ def signup(request):
     return render(request, 'signup.html', context)
 
 def album_index(request):
-    # albums = Album.objects.filter(user=request.user)
-    # Render the armies/index.html template with the armies data
-    return render(request, 'albums/index.html') #, {'albums': albums})
+    response = requests.get(f"https://api.discogs.com/database/search?q=%The&genre=rock&key=sKHvVGbPNWqXPtxNqkyc&secret=LkehLbliRgkzCOOUbwFGCCXADMqgdMif").json()
+    data = response["results"]
+    # albumsfromap = data["results"]
+    albums = []
+    for album in data:
+        album_data = Album(
+            title = album["title"],
+            year = album["year"],
+            genre = album["genre"],
+            style = album["style"],
+            cover_image = album["cover_image"],
+            master_id = album["master_id"],
+        )
+        album_data.save()
+        albums.append(album_data)
+    print(albums)
+    return render(request, 'albums/index.html', {'albums': albums})

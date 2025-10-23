@@ -7,6 +7,9 @@
 
 <section class="page-header">
   <h1>Albums</h1>
+  {% for album in albums %}
+      <img src="{{album.cover_image}}">
+  {% endfor %}
 </section>
 
 <section class="card-container">
