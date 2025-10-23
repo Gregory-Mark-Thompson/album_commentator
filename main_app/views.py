@@ -10,7 +10,8 @@ from django.urls import reverse
 from django.http import HttpResponse
 import requests, json
 from django.utils.text import slugify
-from .models import Album
+from .models import Album, Comment
+from .forms import CommentForm
 
 # Create your views here.
 
@@ -62,3 +63,39 @@ def album_index(request):
 def album_detail(request, album_slug):
     album = get_object_or_404(Album, slug=album_slug)
     return render(request, 'albums/detail.html', {'album': album})
+
+@login_required
+def comment_create(request, album_slug):
+    album = get_object_or_404(Album, slug=album_slug)
+    if request.method == 'POST':
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.album = album
+            comment.user = request.user
+            comment.save()
+            return redirect('album_detail', album_slug=album_slug)
+    else:
+        form = CommentForm()
+    return render(request, 'comments/form.html', {'form': form, 'album': album})
+
+@login_required
+def comment_edit(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    if comment.user != request.user:
+        return redirect('album_detail', album_slug=comment.album.slug)  # Or raise 403
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect('album_detail', album_slug=comment.album.slug)
+    else:
+        form = CommentForm(instance=comment)
+    return render(request, 'comments/form.html', {'form': form, 'album': comment.album})
+
+@login_required
+def comment_delete(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    if comment.user == request.user:
+        comment.delete()
+    return redirect('album_detail', album_slug=comment.album.slug)

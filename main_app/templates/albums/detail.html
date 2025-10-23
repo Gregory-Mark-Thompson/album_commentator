@@ -18,7 +18,34 @@
         {% endif %}
     </div>
     <div class="album-img">
-        <img src={{ album.cover_image }} alt="This is the image of the album.">
+        <img src={{ album.cover_image }} alt="This is the image of the album {{ album.title }}.">
     </div>
+</section>
+
+<section class="comments-section">
+    <h2>Comments</h2>
+    {% for comment in album.comments.all %}
+        <div class="comment" style="border: 1px solid #ccc; margin: 10px; padding: 10px;">
+            <p><strong>{{ comment.user.username }}</strong> ({{ comment.created_at|date:"M d, Y" }}):</p>
+            <p>{{ comment.text }}</p>
+            {% if comment.user == user %}
+                <a href="{% url 'comment_edit' comment.id %}">Edit</a> |
+                <a href="{% url 'comment_delete' comment.id %}">Delete</a>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No comments yet.</p>
+    {% endfor %}
+    
+    {% if user.is_authenticated %}
+        <h3>Add a Comment</h3>
+        <form method="POST" action="{% url 'comment_create' album.slug %}">
+            {% csrf_token %}
+            {{ form.as_p }}  <!-- Or customize -->
+            <button type="submit">Add Comment</button>
+        </form>
+    {% else %}
+        <p><a href="{% url 'login' %}">Login</a> to add a comment.</p>
+    {% endif %}
 </section>
 {% endblock %}
