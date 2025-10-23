@@ -7,11 +7,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 import requests, json
 from django.utils.text import slugify
-from .models import Album, Comment
+from .models import Album, Comment, CommentLike
 from .forms import CommentForm
+from django.views.decorators.http import require_POST
 
 # Create your views here.
 
@@ -99,3 +100,25 @@ def comment_delete(request, comment_id):
     if comment.user == request.user:
         comment.delete()
     return redirect('album_detail', album_slug=comment.album.slug)
+
+@login_required
+@require_POST
+def toggle_like(request, comment_id):
+    comment = get_object_or_404(Comment, id=comment_id)
+    user = request.user
+    
+    like_exists = CommentLike.objects.filter(user=user, comment=comment).exists()
+    
+    if like_exists:
+        CommentLike.objects.filter(user=user, comment=comment).delete()
+        liked = False
+    else:
+        CommentLike.objects.create(user=user, comment=comment)
+        liked = True
+    
+    like_count = comment.likes.count()
+    
+    return JsonResponse({
+        'liked': liked,
+        'like_count': like_count,
+    })

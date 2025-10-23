@@ -32,6 +32,16 @@
                 <a href="{% url 'comment_edit' comment.id %}">Edit</a> |
                 <a href="{% url 'comment_delete' comment.id %}">Delete</a>
             {% endif %}
+            <div class="like-section">
+                <span class="like-count" style="margin-right: 8px; font-weight: bold;">Likes: {{ comment.likes.count }}</span>
+                {% if user.is_authenticated and user != comment.user %}
+                    <button class="like-button"
+                            data-comment-id="{{ comment.id }}"
+                            style="padding: 4px 8px; font-size: 0.9rem; cursor: pointer;">
+                        {% if user in comment.likes.all %}Unlike{% else %}Like{% endif %}
+                    </button>
+                {% endif %}
+            </div>
         </div>
     {% empty %}
         <p>No comments yet.</p>
