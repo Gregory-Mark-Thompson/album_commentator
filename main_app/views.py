@@ -8,7 +8,9 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
 from django.urls import reverse
 from django.http import HttpResponse, JsonResponse
+import os
 import requests
+from urllib.parse import quote
 from django.utils.text import slugify
 from django.contrib import messages
 from .models import Album, Comment, CommentLike
@@ -36,18 +38,19 @@ def signup(request):
     return render(request, 'signup.html', context)
 
 def album_index(request):
-    search_type = request.GET.get('type', '')  # 'genre' or 'style'
+    consumer_key = os.getenv('DISCOGS_CONSUMER_KEY')
+    consumer_secret = os.getenv('DISCOGS_CONSUMER_SECRET')
+    search_type = request.GET.get('type', '')
     search_query = request.GET.get('q', '').strip()
     albums = []
 
-    # Default population if DB is empty and no search
     if not Album.objects.exists() and not search_type:
-        response = requests.get(
-            "https://api.discogs.com/database/search?q=The&genre=rock&key=sKHvVGbPNWqXPtxNqkyc&secret=LkehLbliRgkzCOOUbwFGCCXADMqgdMif"
-        )
-        if response.status_code == 200:
+        url = f"https://api.discogs.com/database/search?q={quote('The')}&genre={quote('rock')}&key={consumer_key}&secret={consumer_secret}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
             for album_data in response.json().get("results", []):
-                Album.objects.get_or_create(
+                Album.objects.update_or_create(
                     master_id=album_data["master_id"],
                     defaults={
                         'title': album_data["title"],
@@ -57,18 +60,19 @@ def album_index(request):
                         'cover_image': album_data["cover_image"],
                     }
                 )
-        else:
-            messages.error(request, f"API error: {response.status_code}")
+        except requests.RequestException as e:
+            messages.error(request, f"API error: {str(e)}")
         albums = list(Album.objects.all())
 
-    # Handle search
+
     elif search_type and search_query:
         param = 'genre' if search_type == 'genre' else 'style'
-        url = f"https://api.discogs.com/database/search?{param}={requests.utils.quote(search_query)}&type=release&per_page=50&key=sKHvVGbPNWqXPtxNqkyc&secret=LkehLbliRgkzCOOUbwFGCCXADMqgdMif"
-        response = requests.get(url)
-        if response.status_code == 200:
+        url = f"https://api.discogs.com/database/search?{param}={quote(search_query)}&type=release&per_page=50&key={consumer_key}&secret={consumer_secret}"
+        try:
+            response = requests.get(url)
+            response.raise_for_status()
             for album_data in response.json().get("results", []):
-                album, created = Album.objects.get_or_create(
+                Album.objects.update_or_create(
                     master_id=album_data["master_id"],
                     defaults={
                         'title': album_data["title"],
@@ -78,17 +82,9 @@ def album_index(request):
                         'cover_image': album_data["cover_image"],
                     }
                 )
-                if not created:
-                    album.title = album_data["title"]
-                    album.year = album_data.get("year", "")
-                    album.genre = album_data.get("genre", [])
-                    album.style = album_data.get("style", [])
-                    album.cover_image = album_data["cover_image"]
-                    album.save()
-
             albums = Album.objects.filter(**{f"{param}__contains": [search_query]})
-        else:
-            messages.error(request, f"API error: {response.status_code}")
+        except requests.RequestException as e:
+            messages.error(request, f"API error: {str(e)}")
     else:
         albums = Album.objects.all()
 
