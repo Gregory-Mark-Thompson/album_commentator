@@ -5,17 +5,35 @@
 />
 {% endblock %} {% block content %}
 
-<section class="page-header">
-  <h1>Albums</h1>
-  {% for album in albums %}
-    <a href="{% url 'album_detail' album.slug %}">
-      <img src="{{album.cover_image}}">
-    </a>
-  {% endfor %}
-</section>
+<h3>Search for Albums:</h3>
+<div>
+    <form method="GET" action="{% url 'album-index' %}">
+        <input type="hidden" name="type" value="genre">
+        <input type="text" name="q" placeholder="Search by Genre (e.g., rock)" value="{% if search_type == 'genre' %}{{ search_query }}{% endif %}" required>
+        <button type="submit">Search Genre</button>
+    </form>
+    <form method="GET" action="{% url 'album-index' %}">
+        <input type="hidden" name="type" value="style">
+        <input type="text" name="q" placeholder="Search by Style (e.g., punk rock)" value="{% if search_type == 'style' %}{{ search_query }}{% endif %}" required>
+        <button type="submit">Search Style</button>
+    </form>
+</div>
+<h1>Albums:</h1>
+{% if search_type %}
+    <h3>Search Results for {{ search_type|title }}: "{{ search_query }}"</h3>
+{% endif %}
 
-<section class="card-container">
-
-</section>
+{% if albums %}
+    {% for album in albums %}
+    <div>
+        <a href="{% url 'album_detail' album.slug %}">
+          <h4>{{album.title}}</h4>
+          <img src="{{album.cover_image}}">
+        </a>
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No albums found.</p>
+{% endif %}
 
 {% endblock %}
